@@ -36,3 +36,7 @@
 4.  本仓库根目录里的i_eras.jpeg微信号，会拉你进微信开发群！
 5.  其他自发组织的交流
 6.  如果你觉得好，也可用捐赠的方式和俺交流！跪谢！啊哈哈～
+![机器人DEMO](https://gitee.com/ikam/http-sdk/raw/master/i_eras.jpeg "机器人DEMO")
+
+![捐赠](https://gitee.com/ikam/http-sdk/raw/master/IMG_3605.JPG "捐赠")
+![捐赠](https://gitee.com/ikam/http-sdk/raw/master/IMG_3606.JPG "捐赠")
