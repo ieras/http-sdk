@@ -240,26 +240,29 @@ class Robot{
      *
      * param.event
      * >>> SendTextMsg 发送文本消息 robot_wxid to_wxid(群/好友) msg
-     * >>> SendImageMsg 发送图片消息 robot_wxid to_wxid(群/好友) msg(name[md5值或其他唯一的名字，包含扩展名例如1.jpg], url)
-     * >>> SendVideoMsg 发送视频消息 robot_wxid to_wxid(群/好友) msg(name[md5值或其他唯一的名字，包含扩展名例如1.mp4], url)
-     * >>> SendFileMsg 发送文件消息 robot_wxid to_wxid(群/好友) msg(name[md5值或其他唯一的名字，包含扩展名例如1.txt], url)
+	 * >>> 下面的几个文件类型的消息path为服务器里的路径如"D:/a.jpg"，会优先使用，文件不存在则使用 url(网络地址)
+     * >>> SendImageMsg 发送图片消息 robot_wxid to_wxid(群/好友) msg(name[md5值或其他唯一的名字，包含扩展名例如1.jpg], url,patch)
+     * >>> SendVideoMsg 发送视频消息 robot_wxid to_wxid(群/好友) msg(name[md5值或其他唯一的名字，包含扩展名例如1.mp4], url,patch)
+     * >>> SendFileMsg 发送文件消息 robot_wxid to_wxid(群/好友) msg(name[md5值或其他唯一的名字，包含扩展名例如1.txt], url,patch)
+     * >>> SendEmojiMsg 发送动态表情 robot_wxid to_wxid(群/好友) msg(name[md5值或其他唯一的名字，包含扩展名例如1.gif], url,patch)
      * >>> SendGroupMsgAndAt 发送群消息并艾特(4.4只能艾特一人) robot_wxid, group_wxid, member_wxid, member_name, msg
-     * >>> SendEmojiMsg 发送动态表情 robot_wxid to_wxid(群/好友) msg(name[md5值或其他唯一的名字，包含扩展名例如1.gif], url)
      * >>> SendLinkMsg 发送分享链接 robot_wxid, to_wxid(群/好友), msg(title, text, target_url, pic_url, icon_url)
      * >>> SendMusicMsg 发送音乐分享 robot_wxid, to_wxid(群/好友), msg(music_name, type)
+	 * >>> SendCardMsg 发送名片消息(被禁用) robot_wxid to_wxid(群/好友) msg(微信号)
+	 * >>> SendMiniApp 发送小程序 robot_wxid to_wxid(群/好友) msg(小程序消息的xml内容)
      * >>> GetRobotName 取登录账号昵称 robot_wxid
      * >>> GetRobotHeadimgurl 取登录账号头像 robot_wxid
      * >>> GetLoggedAccountList 取登录账号列表 不需要参数
-     * >>> GetFriendList 取好友列表 robot_wxid
-     * >>> GetGroupList 取群聊列表 robot_wxid(不传返回全部机器人的)
-     * >>> GetGroupMemberList 取群成员列表 robot_wxid, group_wxid
-     * >>> GetGroupMemberInfo 取群成员详细 robot_wxid, group_wxid, member_wxid
+     * >>> GetFriendList 取好友列表 robot_wxid msg(is_refresh,out_rawdata)//是否更新缓存 是否原始数据
+     * >>> GetGroupList 取群聊列表 robot_wxid(不传返回全部机器人的)，msg(is_refresh)
+     * >>> GetGroupMemberList 取群成员列表 robot_wxid, group_wxid msg(is_refresh)
+     * >>> GetGroupMemberInfo 取群成员详细 robot_wxid, group_wxid, member_wxid msg(is_refresh)
      * >>> AcceptTransfer 接收好友转账 robot_wxid, to_wxid, msg
      * >>> AgreeGroupInvite 同意群聊邀请 robot_wxid, msg
      * >>> AgreeFriendVerify 同意好友请求 robot_wxid, msg
      * >>> EditFriendNote 修改好友备注 robot_wxid, to_wxid, msg
      * >>> DeleteFriend 删除好友 robot_wxid, to_wxid
-     * >>> GetappInfo 取插件信息 无参数
+     * >>> GetAppInfo 取插件信息 无参数
      * >>> GetAppDir 取应用目录 无
      * >>> AddAppLogs 添加日志 msg
      * >>> ReloadApp 重载插件 无
