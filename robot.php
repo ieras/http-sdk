@@ -6,21 +6,15 @@
  *
  * http://www.uera.cn/robot.php
  * http://r.iknov.com/robot.php
- * @update 2021-01-06 若插件无更新，该demo不再升级～
+ * @update 2021-09-01 若插件无更新，该demo不再升级～
  */
 
-$is_remote = isset($_REQUEST['remote']) ? trim($_REQUEST['remote']) : 0;
+$do = isset($_REQUEST['do']) ? trim($_REQUEST['do']) : 'index';
 //如果在机器人本机运行，修改为127.0.0.1或者localhost，若外网访问改为运行机器人的服务器外网ip
 $robot = Robot::init('122.114.162.223',8090);
-if($is_remote == 1){
-    //控制机器人，只需要在这后面跟上相关指令即可！目前插件没有通信限制
-    //例如:?remote=1&event=GetGroupList 这样就获取群列表了(具体参数可以看文档，也可以看下面的remote方法里的介绍,功能看request方法介绍)
-    $robot->remote();
-}else{
-    // 接收机器人消息并返回处理方案
-    //具体如何处理看下面的response方法
-    $robot->index();
-}
+if(!in_array($do,['index','remote','down']))
+    exit(json_encode(['success'=>false,'meg'=>'do error']));
+$robot->$do();
 
 /*-------下面是逻辑功能开发区域------*/
 
@@ -124,9 +118,105 @@ class Robot{
     }
 
     /**
+     * 将收到的图片转化为下载连接(直连文件)
+     * 只有该文件和可爱猫在同一台服务器时可用
+     * 并且运行该文件的用户必须拥目标文件的读取权限
+     * @param string $filepath 收到的图片、视频、文件消息里的路径地址(其实就是msg的值)
+     */
+    public function down()
+    {
+        ob_clean();
+        $filepath = $_REQUEST['filepath']??'./favicon.ico';
+        if (!file_exists($filepath)) {
+            exit(json_encode(['success'=>false,'message'=>'file not found!']));
+        }
+
+        $fp = fopen($filepath, "r");
+        $filesize = filesize($filepath);
+
+        header("Content-type:application/octet-stream");
+        header("Accept-Ranges:bytes");
+        header("Accept-Length:" . $filesize);
+        header("Content-Disposition: attachment; filename=" . basename($filepath));
+
+        $buffer = 1024;
+        $buffer_count = 0;
+        while (!feof($fp) && $filesize - $buffer_count > 0) {
+            $data = fread($fp, $buffer);
+            $buffer_count += $buffer;
+            echo $data;
+        }
+        fclose($fp);
+    }
+
+    /**
+     * 命令机器人去做某事
+     * @param array $param
+     * @param string $authorization
+     * @return string
+     *
+     * param
+     * >>>  event 事件名称
+     * >>>  robot_wxid 机器人id
+     * >>>  group_wxid 群id
+     * >>>  member_wxid 群艾特人id
+     * >>>  member_name 群艾特人昵称
+     * >>>  to_wxid 接收方(群/好友)
+     * >>>  msg 消息体(str/json)
+     *
+     * param.event
+     * >>> SendTextMsg 发送文本消息 robot_wxid to_wxid(群/好友) msg
+     * >>> 下面的几个文件类型的消息path为服务器里的路径如"D:/a.jpg"，会优先使用，文件不存在则使用 url(网络地址)
+     * >>> SendImageMsg 发送图片消息 robot_wxid to_wxid(群/好友) msg(name[md5值或其他唯一的名字，包含扩展名例如1.jpg], url,patch)
+     * >>> SendVideoMsg 发送视频消息 robot_wxid to_wxid(群/好友) msg(name[md5值或其他唯一的名字，包含扩展名例如1.mp4], url,patch)
+     * >>> SendFileMsg 发送文件消息 robot_wxid to_wxid(群/好友) msg(name[md5值或其他唯一的名字，包含扩展名例如1.txt], url,patch)
+     * >>> SendEmojiMsg 发送动态表情 robot_wxid to_wxid(群/好友) msg(name[md5值或其他唯一的名字，包含扩展名例如1.gif], url,patch)
+     * >>> SendGroupMsgAndAt 发送群消息并艾特(4.4只能艾特一人) robot_wxid, group_wxid, member_wxid, member_name, msg
+     * >>> SendLinkMsg 发送分享链接 robot_wxid, to_wxid(群/好友), msg(title, text, target_url, pic_url, icon_url)
+     * >>> SendMusicMsg 发送音乐分享 robot_wxid, to_wxid(群/好友), msg(music_name, type)
+     * >>> SendCardMsg 发送名片消息(被禁用) robot_wxid to_wxid(群/好友) msg(微信号)
+     * >>> SendMiniApp 发送小程序 robot_wxid to_wxid(群/好友) msg(小程序消息的xml内容)
+     * >>> GetRobotName 取登录账号昵称 robot_wxid
+     * >>> GetRobotHeadimgurl 取登录账号头像 robot_wxid
+     * >>> GetLoggedAccountList 取登录账号列表 不需要参数
+     * >>> GetFriendList 取好友列表 robot_wxid msg(is_refresh,out_rawdata)//是否更新缓存 是否原始数据
+     * >>> GetGroupList 取群聊列表 robot_wxid(不传返回全部机器人的)，msg(is_refresh)
+     * >>> GetGroupMemberList 取群成员列表 robot_wxid, group_wxid msg(is_refresh)
+     * >>> GetGroupMemberInfo 取群成员详细 robot_wxid, group_wxid, member_wxid msg(is_refresh)
+     * >>> AcceptTransfer 接收好友转账 robot_wxid, to_wxid, msg
+     * >>> AgreeGroupInvite 同意群聊邀请 robot_wxid, msg
+     * >>> AgreeFriendVerify 同意好友请求 robot_wxid, msg
+     * >>> EditFriendNote 修改好友备注 robot_wxid, to_wxid, msg
+     * >>> DeleteFriend 删除好友 robot_wxid, to_wxid
+     * >>> GetAppInfo 取插件信息 无参数
+     * >>> GetAppDir 取应用目录 无
+     * >>> AddAppLogs 添加日志 msg
+     * >>> ReloadApp 重载插件 无
+     * >>> RemoveGroupMember 踢出群成员 robot_wxid, group_wxid, member_wxid
+     * >>> EditGroupName 修改群名称 robot_wxid, group_wxid, msg
+     * >>> EditGroupNotice 修改群公告 robot_wxid, group_wxid, msg
+     * >>> BuildNewGroup 建立新群 robot_wxid, msg(好友Id用"|"分割)
+     * >>> QuitGroup 退出群聊 robot_wxid, group_wxid
+     * >>> InviteInGroup 邀请加入群聊 robot_wxid, group_wxid, to_wxid
+     */
+    public function request($param){
+        if(is_string($param['msg']))
+            $param['msg'] = $this->formatEmoji($param['msg']);//处理emoji
+        //处理完事件返回要怎么做
+        $headers = [
+            'Content-Type:application/json;charset=utf-8',
+        ];
+        if($this->authorization)
+            $headers[] = "Authorization:{$this->authorization}";
+        $json = json_encode($param);
+        echo $json;
+        return json_decode($this->sendHttp($json,null,$headers),true);
+    }
+
+    /**
      * 收到机器人的信息，告诉它怎么做
      * @param array $request
-     * @return string
+     * @return string[]
      *
      * request
      * >>>  event 事件名称
@@ -222,67 +312,6 @@ class Robot{
         return false;
     }
 
-
-    /**
-     * 命令机器人去做某事
-     * @param array $param
-     * @param string $authorization
-     * @return string
-     *
-     * param
-     * >>>  event 事件名称
-     * >>>  robot_wxid 机器人id
-     * >>>  group_wxid 群id
-     * >>>  member_wxid 群艾特人id
-     * >>>  member_name 群艾特人昵称
-     * >>>  to_wxid 接收方(群/好友)
-     * >>>  msg 消息体(str/json)
-     *
-     * param.event
-     * >>> SendTextMsg 发送文本消息 robot_wxid to_wxid(群/好友) msg
-	 * >>> 下面的几个文件类型的消息path为服务器里的路径如"D:/a.jpg"，会优先使用，文件不存在则使用 url(网络地址)
-     * >>> SendImageMsg 发送图片消息 robot_wxid to_wxid(群/好友) msg(name[md5值或其他唯一的名字，包含扩展名例如1.jpg], url,patch)
-     * >>> SendVideoMsg 发送视频消息 robot_wxid to_wxid(群/好友) msg(name[md5值或其他唯一的名字，包含扩展名例如1.mp4], url,patch)
-     * >>> SendFileMsg 发送文件消息 robot_wxid to_wxid(群/好友) msg(name[md5值或其他唯一的名字，包含扩展名例如1.txt], url,patch)
-     * >>> SendEmojiMsg 发送动态表情 robot_wxid to_wxid(群/好友) msg(name[md5值或其他唯一的名字，包含扩展名例如1.gif], url,patch)
-     * >>> SendGroupMsgAndAt 发送群消息并艾特(4.4只能艾特一人) robot_wxid, group_wxid, member_wxid, member_name, msg
-     * >>> SendLinkMsg 发送分享链接 robot_wxid, to_wxid(群/好友), msg(title, text, target_url, pic_url, icon_url)
-     * >>> SendMusicMsg 发送音乐分享 robot_wxid, to_wxid(群/好友), msg(music_name, type)
-	 * >>> SendCardMsg 发送名片消息(被禁用) robot_wxid to_wxid(群/好友) msg(微信号)
-	 * >>> SendMiniApp 发送小程序 robot_wxid to_wxid(群/好友) msg(小程序消息的xml内容)
-     * >>> GetRobotName 取登录账号昵称 robot_wxid
-     * >>> GetRobotHeadimgurl 取登录账号头像 robot_wxid
-     * >>> GetLoggedAccountList 取登录账号列表 不需要参数
-     * >>> GetFriendList 取好友列表 robot_wxid msg(is_refresh,out_rawdata)//是否更新缓存 是否原始数据
-     * >>> GetGroupList 取群聊列表 robot_wxid(不传返回全部机器人的)，msg(is_refresh)
-     * >>> GetGroupMemberList 取群成员列表 robot_wxid, group_wxid msg(is_refresh)
-     * >>> GetGroupMemberInfo 取群成员详细 robot_wxid, group_wxid, member_wxid msg(is_refresh)
-     * >>> AcceptTransfer 接收好友转账 robot_wxid, to_wxid, msg
-     * >>> AgreeGroupInvite 同意群聊邀请 robot_wxid, msg
-     * >>> AgreeFriendVerify 同意好友请求 robot_wxid, msg
-     * >>> EditFriendNote 修改好友备注 robot_wxid, to_wxid, msg
-     * >>> DeleteFriend 删除好友 robot_wxid, to_wxid
-     * >>> GetAppInfo 取插件信息 无参数
-     * >>> GetAppDir 取应用目录 无
-     * >>> AddAppLogs 添加日志 msg
-     * >>> ReloadApp 重载插件 无
-     * >>> RemoveGroupMember 踢出群成员 robot_wxid, group_wxid, member_wxid
-     * >>> EditGroupName 修改群名称 robot_wxid, group_wxid, msg
-     * >>> EditGroupNotice 修改群公告 robot_wxid, group_wxid, msg
-     * >>> BuildNewGroup 建立新群 robot_wxid, msg(好友Id用"|"分割)
-     * >>> QuitGroup 退出群聊 robot_wxid, group_wxid
-     * >>> InviteInGroup 邀请加入群聊 robot_wxid, group_wxid, to_wxid
-     */
-    public function request($param){
-        //处理完事件返回要怎么做
-        $headers = [
-            'Content-Type:application/json;charset=utf-8',
-        ];
-        if($this->authorization)
-            $headers[] = "Authorization:{$this->authorization}";
-        return json_decode($this->sendHttp(json_encode($param),null,$headers),true);
-    }
-
     /**
      * 聊天内容是否以关键词xx开头
      *
@@ -292,6 +321,25 @@ class Robot{
      */
     public function startWith($str,$pattern) {
         return strpos($str,$pattern) === 0 ? true : false;
+    }
+
+    /**
+     * 格式化带emoji的消息，格式化为可爱猫可展示的表情
+     * @param string $str  包含emoji表情的文本
+     * @return string 拼接完成以后的字符串
+     */
+    public function formatEmoji($str){
+        $strEncode = '';
+        $length = mb_strlen($str,'utf-8');
+        for ($i=0; $i < $length; $i++) {
+            $_tmpStr = mb_substr($str,$i,1,'utf-8');
+            if(strlen($_tmpStr) >= 4){
+                $strEncode .= '[@emoji='.trim(json_encode($_tmpStr),'"').']';
+            }else{
+                $strEncode .= $_tmpStr;
+            }
+        }
+        return $strEncode;
     }
 
     /**
