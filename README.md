@@ -39,4 +39,5 @@
 <img src="//gitee.com/ikam/http-sdk/raw/master/i_eras.jpeg" width = "200" alt="机器人DEMO" align=center />
 <img src="//gitee.com/ikam/http-sdk/raw/master/IMG_3605.JPG" width = "200" alt="捐赠" align=center />
 <img src="//gitee.com/ikam/http-sdk/raw/master/IMG_3606.JPG" width = "200" alt="捐赠" align=center />
+
 7.捐赠列表(若未统计在内的辛苦连续群主，跪谢！)：https://www.ikam.cn/thread-19.htm
