@@ -30,7 +30,7 @@
 
 #### 交流
 
-1.  可爱猫|http-sdk QQ群：44520959
+1.  可爱猫|http-sdk QQ群：①：44520959 ②：154390891
 2.  可爱猫|http-sdk 论坛：https://www.ikam.cn/
 3.  本仓库底下的评论
 4.  本仓库根目录里的i_eras.jpeg微信号，会拉你进微信开发群！
@@ -39,3 +39,5 @@
 <img src="//gitee.com/ikam/http-sdk/raw/master/i_eras.jpeg" width = "200" alt="机器人DEMO" align=center />
 <img src="//gitee.com/ikam/http-sdk/raw/master/IMG_3605.JPG" width = "200" alt="捐赠" align=center />
 <img src="//gitee.com/ikam/http-sdk/raw/master/IMG_3606.JPG" width = "200" alt="捐赠" align=center />
+
+7.捐赠列表(若未统计在内的辛苦连续群主，跪谢！)：https://www.ikam.cn/thread-19.htm
