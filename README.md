@@ -31,7 +31,7 @@
 #### 交流
 
 1.  可爱猫|http-sdk QQ群：①：44520959 ②：154390891
-2.  可爱猫|http-sdk 论坛：https://www.ikam.cn/
+2.  可爱猫|http-sdk 论坛：https://www.ikam.cn/forum-1.htm
 3.  本仓库底下的评论
 4.  本仓库根目录里的i_eras.jpeg微信号，会拉你进微信开发群！
 5.  其他自发组织的交流
