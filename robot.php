@@ -7,18 +7,20 @@
  * http://www.uera.cn/robot.php
  * http://r.iknov.com/robot.php
  * @update 2021-09-01 若插件无更新，该demo不再升级～
+ * 2022-04-10 增加小爱聊天接口demo
  */
 
 $do = isset($_REQUEST['do']) ? trim($_REQUEST['do']) : 'index';
 //如果在机器人本机运行，修改为127.0.0.1或者localhost，若外网访问改为运行机器人的服务器外网ip
-$robot = Robot::init('122.114.162.223',8090);
-if(!in_array($do,['index','remote','down']))
-    exit(json_encode(['success'=>false,'meg'=>'do error']));
+$robot = Robot::init('122.114.162.223', 8090);
+if (!in_array($do, ['index', 'remote', 'down']))
+    exit(json_encode(['success' => false, 'meg' => 'do error']));
 $robot->$do();
 
 /*-------下面是逻辑功能开发区域------*/
 
-class Robot{
+class Robot
+{
 
     private $host;
     private $port;
@@ -32,29 +34,31 @@ class Robot{
         'EventLogin' => [//新的账号登录成功/下线时
 
         ],
-        'EventGroupMsg'=> [//群消息事件（收到群消息时，运行这里）
+        'EventGroupMsg' => [//群消息事件（收到群消息时，运行这里）
             'music' => 1,
-            'douyin' =>1,
+            'douyin' => 1,
+            'xiaoAi' => 1,
         ],
-        'EventFriendMsg'=> [//私聊消息事件（收到私聊消息时，运行这里）
+        'EventFriendMsg' => [//私聊消息事件（收到私聊消息时，运行这里）
             'music' => 1,
-            'douyin' =>1,
+            'douyin' => 1,
+            'xiaoAi' => 1,
         ],
-        'EventReceivedTransfer'=> [//收到转账事件（收到好友转账时，运行这里）
+        'EventReceivedTransfer' => [//收到转账事件（收到好友转账时，运行这里）
         ],
-        'EventScanCashMoney'=> [//面对面收款（二维码收款时，运行这里）
+        'EventScanCashMoney' => [//面对面收款（二维码收款时，运行这里）
 
         ],
-        'EventFriendVerify'=> [//好友请求事件（插件3.0版本及以上）
+        'EventFriendVerify' => [//好友请求事件（插件3.0版本及以上）
         ],
-        'EventContactsChange'=> [//朋友变动事件（插件4.0版本及以上，当前为测试版，还未启用，留以备用）
+        'EventContactsChange' => [//朋友变动事件（插件4.0版本及以上，当前为测试版，还未启用，留以备用）
 
         ],
-        'EventGroupMemberAdd'=> [//群成员增加事件（新人进群）
+        'EventGroupMemberAdd' => [//群成员增加事件（新人进群）
         ],
-        'EventGroupMemberDecrease'=> [//群成员减少事件（群成员退出）
+        'EventGroupMemberDecrease' => [//群成员减少事件（群成员退出）
         ],
-        'EventSysMsg'=> [//系统消息事件
+        'EventSysMsg' => [//系统消息事件
 
         ],
     ];
@@ -77,7 +81,7 @@ class Robot{
     {
         $this->host = $host;
         $this->port = $port;
-        if(!is_file($this->authorization_file))
+        if (!is_file($this->authorization_file))
             $this->setAuthorization();
         $this->authorization = $this->getAuthorization();
     }
@@ -87,14 +91,18 @@ class Robot{
      * 该方法不需要动
      * @return string 符合可爱猫|http-sdk插件的操作数据结构json
      */
-    public function index(){
-        header("Content-type: text/html; charset=utf-8");
+    public function index()
+    {
+        header("Content-type: application/json; charset=utf-8");
         date_default_timezone_set("PRC");//设置下时区
         $data = file_get_contents('php://input');//接收原始数据;
-        //file_put_contents('./wxmsg.log',$data."\r\n",FILE_APPEND);//记录接收消息log
-        $rec_arr = json_decode($data,true);//把接收的json转为数组
+        //file_put_contents('/tmp/wxmsg.log',$data."\r\n",FILE_APPEND);//记录接收消息log
+        $rec_arr = json_decode($data, true);//把接收的json转为数组
         $this->checkAuthorization();//检测通信鉴权，并维护其值
-        echo json_encode($this->response($rec_arr));
+        //$resp = json_encode($this->response($rec_arr),JSON_UNESCAPED_UNICODE);
+        $resp = json_encode($this->response($rec_arr));
+        //file_put_contents('/tmp/wxmsg.log',$resp."\r\n",FILE_APPEND);//记录接收消息log
+        echo $resp;
     }
 
     /**
@@ -102,7 +110,8 @@ class Robot{
      * 该方法不需要动
      * @return string 符合openHttpApi插件的操作数据结构json
      */
-    public function remote(){
+    public function remote()
+    {
         header("Content-type: text/html; charset=utf-8");
         date_default_timezone_set("PRC");//设置下时区
         $param = [//若想使用同步处理，也就是你接收完事件要如何处理，那么你就要完善下面这个数组
@@ -126,9 +135,9 @@ class Robot{
     public function down()
     {
         ob_clean();
-        $filepath = $_REQUEST['filepath']??'./favicon.ico';
+        $filepath = $_REQUEST['filepath'] ?? './favicon.ico';
         if (!file_exists($filepath)) {
-            exit(json_encode(['success'=>false,'message'=>'file not found!']));
+            exit(json_encode(['success' => false, 'message' => 'file not found!']));
         }
 
         $fp = fopen($filepath, "r");
@@ -199,18 +208,19 @@ class Robot{
      * >>> QuitGroup 退出群聊 robot_wxid, group_wxid
      * >>> InviteInGroup 邀请加入群聊 robot_wxid, group_wxid, to_wxid
      */
-    public function request($param){
-        if(is_string($param['msg']))
+    public function request($param)
+    {
+        if (is_string($param['msg']))
             $param['msg'] = $this->formatEmoji($param['msg']);//处理emoji
         //处理完事件返回要怎么做
         $headers = [
-            'Content-Type:application/json;charset=utf-8',
+            'Content-Type: application/json;charset=utf-8',
         ];
-        if($this->authorization)
+        if ($this->authorization)
             $headers[] = "Authorization:{$this->authorization}";
         $json = json_encode($param);
         echo $json;
-        return json_decode($this->sendHttp($json,null,$headers),true);
+        return json_decode($this->sendHttp($json, null, $headers), true);
     }
 
     /**
@@ -242,16 +252,17 @@ class Robot{
      * >>>  EventGroupMemberAdd'://群成员增加事件（新人进群）
      * >>>  EventGroupMemberDecrease'://
      */
-    public function response($request){
+    public function response($request)
+    {
         $response = ["event" => ""];//event空时，机器人不处理消息
         $functions = $this->events[$request['event']];
-        if(empty($functions))//若没处理方法，直接返回空数据告知机器人不处理即可！
+        if (empty($functions))//若没处理方法，直接返回空数据告知机器人不处理即可！
             return $response;
 
-        foreach ($functions as $func => $is_on){
-            if($is_on){
-                $response = call_user_func([$this,$func],$request);
-                if($response !== false)
+        foreach ($functions as $func => $is_on) {
+            if ($is_on) {
+                $response = call_user_func([$this, $func], $request);
+                if ($response !== false)
                     break;//只要一个成功就跳出循环
             }
         }
@@ -259,12 +270,13 @@ class Robot{
         return $response;
     }
 
-    public function music($request){
-        $key = ['点歌','我想听','来一首'];
+    public function music($request)
+    {
+        $key = ['点歌', '我想听', '来一首'];
         $msg = trim($request['msg']);
-        foreach ($key as $v){
-            if($this->startWith($msg,$v)){
-                $name = trim(str_replace($v,'',$msg));//把 key的前缀词替换为空
+        foreach ($key as $v) {
+            if ($this->startWith($msg, $v)) {
+                $name = trim(str_replace($v, '', $msg));//把 key的前缀词替换为空
                 return [
                     "event" => "SendMusicMsg",
                     "robot_wxid" => $request['robot_wxid'],
@@ -272,22 +284,23 @@ class Robot{
                     "member_wxid" => '',
                     "member_name" => '',
                     "group_wxid" => '',
-                    "msg" => ['name'=>$name,'type'=>0],
+                    "msg" => ['name' => $name, 'type' => 0],
                 ];
             }
         }
         return false;
     }
 
-    public function douyin($request){
-        $key = ['抖音','抖音视频','抖'];
+    public function douyin($request)
+    {
+        $key = ['抖音', '抖音视频', '抖'];
         $msg = trim($request['msg']);
-        foreach ($key as $v){
-            if($this->startWith($msg,$v)){
-                $dou['link'] = trim(str_replace($v,'',$msg));//把用户发的消息截取为url
-                $dou_json = $this->sendHttp(http_build_query($dou),'http://qsy.988g.cn/ajax/analyze.php');
+        foreach ($key as $v) {
+            if ($this->startWith($msg, $v)) {
+                $dou['link'] = trim(str_replace($v, '', $msg));//把用户发的消息截取为url
+                $dou_json = $this->sendHttp(http_build_query($dou), 'http://qsy.988g.cn/ajax/analyze.php');
                 //file_put_contents('./dou_json.txt',$dou_json);
-                $dou_arr = json_decode($dou_json,true);
+                $dou_arr = json_decode($dou_json, true);
                 //var_dump($dou_arr['data']['cover']);
                 //$v_file = file_get_contents('/tmp/dou/'.basename($dou_arr['data']['downurl']),$dou_arr['data']['downurl']);
                 $link = [
@@ -312,30 +325,82 @@ class Robot{
         return false;
     }
 
+    public function xiaoAi($request)
+    {
+        if ($request['type'] != 1)
+            return false;
+        $api = 'http://jiuli.xiaoapi.cn';
+        $must = false;
+        $req_event = $request['event'];
+        $msg = $request['msg'];
+        if ($req_event == 'EventGroupMsg') {
+            $partnner = '!\[@at,nickname=(.*?),wxid=(.*?)\]!';
+            preg_match_all($partnner, $request['msg'], $match);
+            $at_nick_name = $at_wx_id = [];
+            if (!empty($match[0])) {//说明被艾特了～
+                foreach ($match[0] as $k => $at) {
+                    $msg = trim(str_replace($at, '', $request['msg']));
+                    $at_nick_name[$k] = $match[1][$k];
+                    $at_wx_id[$k] = $match[2][$k];
+                }
+                if (in_array($request['robot_wxid'], $at_wx_id))
+                    $must = true;
+                $event = 'SendGroupMsgAndAt';
+            } else {
+                $event = 'SendTextMsg';
+            }
+            $group_wxid = $request['from_wxid'];
+        } else {
+            $must = true;
+            $event = 'SendTextMsg';
+            $group_wxid = '';
+        }
+        if ($must || rand(1, 5) == 3) {//如果被艾特或者私聊必回，否则 20%的几率回复
+            $api = 'http://jiuli.xiaoapi.cn/i/xiaoai_tts.php';
+            $resp = file_get_contents("{$api}?msg={$msg}");
+            $resps = json_decode($resp, true) ?? ['text' => ''];
+            if (empty(trim($resps['text'])))
+                return false;
+            $msg = $resps['text'];
+            return [
+                "event" => $event,
+                "robot_wxid" => $request['robot_wxid'],
+                "to_wxid" => $request['from_wxid'],
+                "member_wxid" => $request['final_from_wxid'],
+                "member_name" => $request['final_from_name'],
+                "group_wxid" => $group_wxid,
+                "msg" => $msg,
+            ];
+        }
+        return false;
+    }
+
     /**
      * 聊天内容是否以关键词xx开头
      *
-     * @param  string $str  聊天内容
-     * @param  string $pattern  关键词
+     * @param string $str 聊天内容
+     * @param string $pattern 关键词
      * @return boolean  true/false
      */
-    public function startWith($str,$pattern) {
-        return strpos($str,$pattern) === 0 ? true : false;
+    public function startWith($str, $pattern)
+    {
+        return strpos($str, $pattern) === 0 ? true : false;
     }
 
     /**
      * 格式化带emoji的消息，格式化为可爱猫可展示的表情
-     * @param string $str  包含emoji表情的文本
+     * @param string $str 包含emoji表情的文本
      * @return string 拼接完成以后的字符串
      */
-    public function formatEmoji($str){
+    public function formatEmoji($str)
+    {
         $strEncode = '';
-        $length = mb_strlen($str,'utf-8');
-        for ($i=0; $i < $length; $i++) {
-            $_tmpStr = mb_substr($str,$i,1,'utf-8');
-            if(strlen($_tmpStr) >= 4){
-                $strEncode .= '[@emoji='.trim(json_encode($_tmpStr),'"').']';
-            }else{
+        $length = mb_strlen($str, 'utf-8');
+        for ($i = 0; $i < $length; $i++) {
+            $_tmpStr = mb_substr($str, $i, 1, 'utf-8');
+            if (strlen($_tmpStr) >= 4) {
+                $strEncode .= '[@emoji=' . trim(json_encode($_tmpStr), '"') . ']';
+            } else {
                 $strEncode .= $_tmpStr;
             }
         }
@@ -345,16 +410,16 @@ class Robot{
     /**
      * 发送 HTTP 请求
      *
-     * @param  string  $params 请求参数,会原样发送
-     * @param  string $url     请求地址
-     * @param  array  $headers 请求头
-     * @param  int    $timeout 超时时间
-     * @param  string $method  请求方法 post / get
+     * @param string $params 请求参数,会原样发送
+     * @param string $url 请求地址
+     * @param array $headers 请求头
+     * @param int $timeout 超时时间
+     * @param string $method 请求方法 post / get
      * @return string  结果数据(Body原始数据，一般为json字符串)
      */
     public function sendHttp($params, $url = null, $headers = null, $method = 'post', $timeout = 3)
     {
-        $url = $url ? $url : $this->host.':'.$this->port;
+        $url = $url ? $url : $this->host . ':' . $this->port;
 
         $curl = curl_init();
         if ('get' == strtolower($method)) {//以GET方式发送请求
@@ -370,7 +435,7 @@ class Robot{
             'Authorization:Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiI5MjU3NTczMS0zMWVlLTQxM2UtYTcwZS1mMmMyNDk3Y2M4ODAiLCJqdGkiOiI0MTA4MGQ2NjZhMDY5ZjRkNjQzOTg0M2NiMDhiOWE5ZTE1YzRiNzA3ZTE0MzA1NGEyZmI4MTgxOGQ1NjYxOTc2NDczY2I5MTk1MzI5ODU1YyIsImlhdCI6MTYwOTE1MTYyNiwibmJmIjoxNjA5MTUxNjI2LCJleHAiOjE2MTE4MzAwMjMsInN1YiI6IjEiLCJzY29wZXMiOltdfQ.i0R_gQuJ6iNK8g4RaF4paBQ4GUxnoQ-0uOjEy4cc3o1_sN4imj-k5ocnHsPdV2e467XJXBmoIKGAlh1RDuKnA6ksa1arhM78YjqRRwjw5jICnQ1O8PM-hYiAOF33X32UeHujVskGgYobFmtgUERZP--69qkdlxxpgmfQBkGwE1-XJH4VjcX82xHvxtiC0O56krpmYP7N9EimVcIc6ciKV_inlM8epI8Io5JKddRppIga3e04nV5hujb0m8bN5rD32l7mOeYRyTNhZAaovbjAvjWSFrPCz4LoXXDyxUDEmfBKxUd1JFNHfdWBo3dFMCh9-MSuKdSVY0LqeKKf9FKoiYNBIETYgsdOIq_QKhoJsrumC2y_IZ6iwQEpaRrH2Y6dzUKzfisBc2dBBeFEmOIo4ZB-HajBcRNfnnue60RMCXs_GrczQ5np8P5CzhqdHomHA9VxbhyvzjO-qAB76lgaxaOVC4w7p_h74nXOY5HMMzK7_DTbwiMMGtpX2S_aN4Z2yuVEK9h0c8JBqGN-Theb7ZHznP-NTgCyBkmzx-FtF6Pmahgp7kYv6trrSNd0WdKpQn4XBaXbVKINaobtCd0QONnFcGf3svUg8Lfoyy-r3B8y7nh94-2iNBfvPlgqzwrBdhmEEMnz6oJXCscu-d9z6a8L8cQty3YgFSzNEbh1YoI'
         ];
         */
-        if(!empty($headers))
+        if (!empty($headers))
             curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
         curl_setopt($curl, CURLOPT_HEADER, false);//是否打印服务器返回的header
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);//要求结果为字符串且输出到屏幕上
@@ -383,7 +448,7 @@ class Robot{
             $Info = curl_getinfo($curl);
             curl_close($curl);
             print_r($Info);
-            return $err. ' result: ' . $res . 'error_msg: '.$Errno;
+            return $err . ' result: ' . $res . 'error_msg: ' . $Errno;
         }
         curl_close($curl);//关闭curl
 
@@ -395,7 +460,8 @@ class Robot{
      * @return array
      * @author 遗忘悠剑
      */
-    private function getHeaders() {
+    private function getHeaders()
+    {
         $headers = [];
         if (!function_exists('getallheaders')) {
             foreach ($_SERVER as $name => $value) {
@@ -404,7 +470,7 @@ class Robot{
                         ucwords(strtolower(str_replace('_', ' ', substr($name, 5)))))] = $value;
                 }
             }
-        }else{
+        } else {
             $headers = getallheaders();
         }
         return $headers;
@@ -416,18 +482,21 @@ class Robot{
      * @return string
      * @author 遗忘悠剑
      */
-    private function setAuthorization($authorization = ''){
-        file_put_contents($this->authorization_file,$authorization);
+    private function setAuthorization($authorization = '')
+    {
+        file_put_contents($this->authorization_file, $authorization);
         $this->authorization = $authorization;
         return $this->authorization;
     }
+
     /**
      * 获取Authorization
      * @return string
      * @author 遗忘悠剑
      */
-    private function getAuthorization(){
-        $this->authorization = file_get_contents($this->authorization_file) ?:'';
+    private function getAuthorization()
+    {
+        $this->authorization = file_get_contents($this->authorization_file) ?: '';
         return $this->authorization;
     }
 
@@ -436,9 +505,10 @@ class Robot{
      * @return string
      * @author 遗忘悠剑
      */
-    private function checkAuthorization(){
+    private function checkAuthorization()
+    {
         $headers = $this->getHeaders();
-        if(!empty($headers['Authorization']) && $headers['Authorization'] != $this->getAuthorization())
+        if (!empty($headers['Authorization']) && $headers['Authorization'] != $this->getAuthorization())
             return $this->setAuthorization($headers['Authorization'] ?: '');
     }
 }
