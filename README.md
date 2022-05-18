@@ -2,6 +2,10 @@
 
 #### 介绍
 可爱猫|http-sdk，主要提供了可爱猫http版的sdk全部功能！支持可爱猫4和可爱猫5，欢迎大家使用！欢迎大家提pr，让我们一起完善吧！
+我开发主要是在码云，所以大家只需要关注码云地址即可，同样提问题或者PR 也在码云进行即可！
+ **记住永久码云地址** ：https://gitee.com/ikam/http-sdk
+当然，如果特殊情况比如码云访问不到了，也可以去github找到我！但是不要在github提交pr或者评论什么的，因为不常看！我们还是要好好支持我们国产开源码云平台！
+ **最后，你也记一下GitHub地址吧** ：https://github.com/ieras/http-sdk
 
 #### 软件架构
 本软件纯易语言开发！第三方模块使用了精易模块！另外加载了可爱猫官方提供的sdk
@@ -9,10 +13,10 @@
 
 #### 安装教程
 
-1.  下载可爱猫！(https://wwa.lanzous.com/b0ew5ncjg 密码：gagm)
+1.  下载可爱猫！https://www.ikam.cn/thread-39.htm
 2.  解压可爱猫到你喜欢的目录(绿色免安装)，但是记得关闭杀毒或者放行[大概是易语言没买win的证书吧，各个杀毒都杀，但是真不是病毒]
 3.  把本插件的发行版本(或者git根目录里的dll注意[http.cat.dll是可爱猫4版本，iHttp.cat.dll是可爱猫5版本])，放进可爱猫目录里的app下面即可！
-4.  打开可爱猫！
+4.  打开可爱猫！把插件dll放可爱猫目录的app里，然后点击可爱猫面板上的重载应用，就看到iHttp了，然后右键-菜单-修改里面的远程接口为自己开发的接口即可！
 
 #### 使用说明
 
@@ -35,9 +39,6 @@
 3.  本仓库底下的评论
 4.  本仓库根目录里的i_eras.jpeg微信号，会拉你进微信开发群！
 5.  其他自发组织的交流
-6.  如果你觉得好，也可用捐赠的方式和俺交流！跪谢！啊哈哈～
-<img src="//gitee.com/ikam/http-sdk/raw/master/i_eras.jpeg" width = "200" alt="机器人DEMO" align=center />
-<img src="//gitee.com/ikam/http-sdk/raw/master/IMG_3605.JPG" width = "200" alt="捐赠" align=center />
-<img src="//gitee.com/ikam/http-sdk/raw/master/IMG_3606.JPG" width = "200" alt="捐赠" align=center />
+6.  如果你觉得好，也可用捐赠的方式和俺交流！跪谢！啊哈哈～点击下面，立即捐赠 https://www.ikam.cn/thread-10.htm
 
 7.捐赠列表(若未统计在内的辛苦连续群主，跪谢！)：https://www.ikam.cn/thread-19.htm
